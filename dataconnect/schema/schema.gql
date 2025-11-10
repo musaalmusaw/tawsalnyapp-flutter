@@ -1,0 +1,62 @@
+type User @table {
+  displayName: String!
+  email: String!
+  role: String!
+  phoneNumber: String
+  photoUrl: String
+}
+
+type Student @table {
+  parent: User
+  firstName: String!
+  lastName: String!
+  dateOfBirth: Date!
+  schoolId: String!
+  gradeLevel: String
+  allergies: String
+}
+
+type Bus @table {
+  licensePlate: String!
+  capacity: Int!
+  busNumber: String!
+  make: String
+  model: String
+  year: Int
+}
+
+type Route @table {
+  name: String!
+  description: String!
+  startTime: Timestamp!
+  endTime: Timestamp!
+  estimatedDuration: Int
+}
+
+type Stop @table {
+  route: Route
+  name: String!
+  latitude: Float!
+  longitude: Float!
+  sequenceNumber: Int!
+  address: String
+  estimatedArrivalTime: Timestamp
+}
+
+type BusAssignment @table {
+  driver: User!
+  bus: Bus!
+  route: Route!
+  assignmentDate: Date!
+  notes: String
+}
+
+type Attendance @table {
+  student: Student!
+  busAssignment: BusAssignment!
+  date: Date!
+  status: String!
+  pickupTime: Timestamp
+  dropoffTime: Timestamp
+  notes: String
+}

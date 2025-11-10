@@ -1,0 +1,94 @@
+mutation CreateDemoData @auth(level: PUBLIC, insecureReason: "This mutation is for demo purposes and safe to expose to the public.") @transaction {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      displayName: "demouser1",
+      email: "demouser1@example.com",
+      role: "parent"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      displayName: "demouser2",
+      email: "demouser2@example.com",
+      role: "driver"
+    }
+  ])
+  student_insertMany(data: [
+    {
+      id: "650e8400-e29b-41d4-a716-446655440002",
+      parentId: "550e8400-e29b-41d4-a716-446655440000",
+      firstName: "student1",
+      lastName: "user1",
+      dateOfBirth: "2010-01-01",
+      schoolId: "school1"
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440003",
+      firstName: "student2",
+      lastName: "user2",
+      dateOfBirth: "2012-03-15",
+      schoolId: "school2",
+      parentId: "550e8400-e29b-41d4-a716-446655440000",
+    }
+  ])
+  bus_insertMany(data: [
+    {
+      id: "750e8400-e29b-41d4-a716-446655440004",
+      busNumber: "Bus1",
+      capacity: 50,
+      licensePlate: "Lic1"
+    },
+    {
+      id: "750e8400-e29b-41d4-a716-446655440005",
+      busNumber: "Bus2",
+      capacity: 40,
+      licensePlate: "Lic2"
+    }
+  ])
+  route_insertMany(data: [
+    {
+      id: "850e8400-e29b-41d4-a716-446655440006",
+      name: "Route1",
+      description: "Route Description 1",
+      startTime: "2024-01-01T07:00:00Z",
+      endTime: "2024-01-01T08:00:00Z"
+    },
+    {
+      id: "850e8400-e29b-41d4-a716-446655440007",
+      name: "Route2",
+      description: "Route Description 2",
+      startTime: "2024-01-01T08:00:00Z",
+      endTime: "2024-01-01T09:00:00Z"
+    }
+  ])
+  busAssignment_insertMany(data: [
+    {
+      id: "950e8400-e29b-41d4-a716-446655440008",
+      busId: "750e8400-e29b-41d4-a716-446655440004",
+      driverId: "550e8400-e29b-41d4-a716-446655440001",
+      routeId: "850e8400-e29b-41d4-a716-446655440006",
+      assignmentDate: "2024-01-01"
+    },
+    {
+      id: "950e8400-e29b-41d4-a716-446655440009",
+      busId: "750e8400-e29b-41d4-a716-446655440005",
+      driverId: "550e8400-e29b-41d4-a716-446655440001",
+      routeId: "850e8400-e29b-41d4-a716-446655440007",
+      assignmentDate: "2024-01-02"
+    }
+  ])
+    attendance_insertMany(data: [
+    {
+      busAssignmentId: "950e8400-e29b-41d4-a716-446655440008",
+      studentId: "650e8400-e29b-41d4-a716-446655440002",
+      date: "2024-01-01",
+      status: "present"
+    },
+    {
+      busAssignmentId: "950e8400-e29b-41d4-a716-446655440009",
+      studentId: "650e8400-e29b-41d4-a716-446655440003",
+      date: "2024-01-02",
+      status: "absent"
+    }
+  ])
+}

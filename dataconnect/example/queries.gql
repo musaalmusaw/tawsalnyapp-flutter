@@ -1,0 +1,40 @@
+mutation CreateUser @auth(level: USER) {
+  user_insert(data: {
+    id_expr: "uuidV4()",
+    displayName: "New User",
+    email: "newuser@example.com",
+    role: "user"
+  })
+}
+
+query ListRoutes @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  routes {
+    id
+    name
+    description
+    startTime
+    endTime
+  }
+}
+
+mutation UpdateStudentAllergies($studentId: UUID!, $allergies: String) @auth(level: USER) {
+  student_update(
+    key: { id: $studentId }
+    data: { allergies: $allergies }
+  )
+}
+
+query GetBusAssignmentForDriver @auth(level: USER) {
+  busAssignments(where: { driverId: { eq_expr: "auth.uid" } }) {
+    id
+    bus {
+      busNumber
+      capacity
+    }
+    route {
+      name
+      description
+    }
+    assignmentDate
+  }
+}
