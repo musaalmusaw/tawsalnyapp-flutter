@@ -1,92 +1,110 @@
 // lib/screens/customer/route_request_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+// **********************************************
+// ** هذا هو الرابط الذي قمنا بتعديله في آخر خطوة **
+// **********************************************
+// نستخدم final بدلاً من const هنا للتأكد من عدم وجود مشاكل، على الرغم من أنه يجب أن يكون ثابتًا
+final url = 'https://tawsalny-match-final-2025.vercel.app/api/match-route';
 
 class RouteRequestScreen extends StatefulWidget {
-  final LatLng initialLocation;
-
-  const RouteRequestScreen({required this.initialLocation});
+  const RouteRequestScreen({super.key});
 
   @override
   State<RouteRequestScreen> createState() => _RouteRequestScreenState();
 }
 
 class _RouteRequestScreenState extends State<RouteRequestScreen> {
-  final _startController = TextEditingController();
-  final _destinationController = TextEditingController();
+  bool _isSearching = false;
+  String _matchResult = "اضغط للبحث عن سائق";
 
-  // المنطق هنا:
-  // 1. استخدام Google Places API لتحديد الإحداثيات من النصوص المدخلة
-  // 2. استخدام Google Maps Directions API لرسم المسار (Polyline)
+  // دالة البحث عن السائق (تستدعي خوارزمية Vercel)
+  Future<void> searchForDriver() async {
+    setState(() {
+      _isSearching = true;
+      _matchResult = "جاري البحث عن سائق...";
+    });
 
-  // دالة إرسال الطلب (تفعل خوارزمية البحث)
-  void _searchForDriver() {
-    if (_startController.text.isEmpty || _destinationController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('الرجاء تحديد نقطة البداية والوجهة أولاً.')),
+    try {
+      // بيانات الطلب التي ترسلها الخوارزمية (يمكنك تعديل هذه البيانات)
+      final body = json.encode({
+        "riderId": "customer_12345",
+        "pickupLat": 33.3152,      // مثال إحداثيات انطلاق
+        "pickupLng": 44.3661,
+        "destinationLat": 33.3121, // مثال إحداثيات وصول
+        "destinationLng": 44.3644,
+        "radiusKm": 5,             // نصف قطر البحث عن السائقين
+      });
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: body,
       );
-      return;
-    }
 
-    // هنا يتم إرسال إحداثيات (البداية والوجهة والـ Polyline) إلى Firebase
-    // Backend Cloud Function
-    // مدة الطلب: أسبوع واحد (7 أيام).
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('جاري البحث عن سائقين على الخط. سيتم إخطارك خلال أسبوع.')),
-    );
-    //   }
-
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(title: Text('طلب خط نقل')),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(15.0),
-          child: Column(
-            children: [
-              // حقل البداية
-              TextFormField(
-                controller: _startController,
-                decoration: InputDecoration(
-                  labelText: 'نقطة البداية',
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.location_on),
-                    onPressed: () {
-                      // فتح خريطة صغيرة لاختيار الموقع
-                    },
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
-              // حقل الوجهة
-              TextFormField(
-                controller: _destinationController,
-                decoration: InputDecoration(
-                  labelText: 'الوجهة',
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.flag),
-                    onPressed: () {
-                      // فتح خريطة صغيرة لاختيار الموقع
-                    },
-                  ),
-                ),
-              ),
-              SizedBox(height: 30),
-
-              // زر البحث
-              ElevatedButton.icon(
-                onPressed: _searchForDriver,
-                icon: Icon(Icons.search),
-                label: Text('ابحث عن سائق (مدة الطلب أسبوع)', style: TextStyle(fontSize: 18)),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 55),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+        if (data['matchedDriver']) {
+          setState(() {
+            _matchResult = "تم العثور على سائق! السائق: ${data['driverId']}";
+          });
+        } else {
+          setState(() {
+            _matchResult = "لم يتم العثور على سائق قريب. حاول مرة أخرى.";
+          });
+        }
+      } else {
+        // إذا كان هناك خطأ من الخادم (مثل 500)
+        setState(() {
+          _matchResult = "خطأ في الاتصال بالخادم: ${response.statusCode}";
+        });
+        print("Vercel API Error: ${response.body}");
+      }
+    } catch (e) {
+      // إذا كان هناك خطأ في الاتصال (مثل عدم وجود إنترنت)
+      setState(() {
+        _matchResult = "خطأ في الشبكة أو الاتصال: $e";
+      });
+      print("Network Error: $e");
+    } finally {
+      setState(() {
+        _isSearching = false;
+      });
     }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('طلب رحلة')),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              _matchResult,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 50),
+            ElevatedButton(
+              onPressed: _isSearching ? null : searchForDriver,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+              child: _isSearching
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('البحث عن سائق (SearchForDriver)'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -35,6 +35,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # ******************************************************************
+  # ** هذه هي الحزمة المطلوبة للاتصال بخوارزمية Vercel (مهم جداً!) **
+  # ******************************************************************
+  http: ^1.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
