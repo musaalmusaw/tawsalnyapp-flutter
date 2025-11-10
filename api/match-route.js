@@ -6,14 +6,33 @@
 // استيراد المكتبات الضرورية
 const admin = require('firebase-admin');
 
+// 🚨 الخطوة 1: استخراج المتغيرات البيئية
+// نستخدم متغير وسيط لضمان قراءة سلسلة النص الطويلة بشكل صحيح.
+const serviceAccountKeyString = process.env.SERVICE_ACCOUNT_KEY;
+const databaseUrl = process.env.FIREBASE_DATABASE_URL; // متغير جديد (يجب إضافته في Vercel)
+
 // يجب تهيئة التطبيق قبل استخدام خدمات Firebase الأخرى
 if (!admin.apps.length) {
-    admin.initializeApp({
-        // ✅ التعديل الحاسم: نستخدم اسم المتغير البيئي الذي تم رفعه في Vercel
-        credential: admin.credential.cert(JSON.parse(process.env.SERVICE_ACCOUNT_KEY)),
-        // رابط قاعدة البيانات الصحيح
-        databaseURL: "https://tawsalnyapp-default-rtdb.firebaseio.com/"
-    });
+    if (!serviceAccountKeyString || !databaseUrl) {
+        // رسالة خطأ واضحة إذا كانت المتغيرات مفقودة
+        console.error("Critical Error: Missing SERVICE_ACCOUNT_KEY or FIREBASE_DATABASE_URL environment variables.");
+        // يمكننا رمي خطأ لإنهاء التهيئة
+        throw new Error('Firebase-Config-Error: Missing environment variables for service key or database URL.');
+    }
+
+    try {
+        // 🚨 الخطوة 2: استخدام JSON.parse لتحويل السلسلة النصية إلى كائن JSON
+        const serviceAccount = JSON.parse(serviceAccountKeyString);
+
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+            databaseURL: databaseUrl // استخدام المتغير البيئي الجديد
+        });
+        console.log("Firebase app initialized successfully.");
+    } catch (e) {
+        console.error("Critical Error: Failed to parse SERVICE_ACCOUNT_KEY or initialize Firebase:", e);
+        throw new Error('Firebase-Init-Error: Failed to parse service account key. Check key format in Vercel.');
+    }
 }
 
 // دالة مساعد لحساب المسافة الجغرافية (بالمتر) بين نقطتين (Haversine Formula)
@@ -34,6 +53,10 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 // الدالة الداخلية لخوارزمية المطابقة
 async function matchRouteRequestInternal(data, context) {
+    // التأكد من أن Firebase مُهيأ بنجاح قبل المتابعة
+    if (!admin.apps.length) {
+        throw new Error('Internal Error: Firebase initialization failed, cannot proceed.');
+    }
 
     if (!context.auth || !context.auth.uid) {
         throw new Error('Unauthenticated: يجب أن تكون مسجلاً للدخول لتنفيذ هذا الإجراء.');
