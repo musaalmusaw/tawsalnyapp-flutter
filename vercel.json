@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/match-route.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "builds": [
+    {
+      "src": "api/match-route.js",
+      "use": "@vercel/node"
+    }
+  ]
+}
