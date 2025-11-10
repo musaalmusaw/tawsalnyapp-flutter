@@ -13,6 +13,10 @@ if (!admin.apps.length) {
     // سنستخدم متغير بيئة (Environment Variable) يسمى FIREBASE_SERVICE_ACCOUNT
     admin.initializeApp({
         credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
+        // **********************************************
+        // ** التعديل الذي تم: إضافة رابط قاعدة البيانات الصحيح **
+        // **********************************************
+        databaseURL: "https://tawsalnyapp-default-rtdb.firebaseio.com/"
     });
 }
 
@@ -59,6 +63,7 @@ async function matchRouteRequestInternal(data, context) {
     // ... بقية منطق الخوارزمية (بدون تغيير) ...
 
     try {
+        // تستخدم الخوارزمية Firestore هنا
         const driversSnapshot = await admin.firestore().collection('drivers').get();
 
         if (driversSnapshot.empty) {
@@ -104,6 +109,7 @@ async function matchRouteRequestInternal(data, context) {
         });
 
         if (bestMatch) {
+            // تحديث حالة السائق وإضافة الطلب
             await admin.firestore().collection('drivers').doc(bestMatch.driverId).update({
                 pendingRequests: admin.firestore.FieldValue.arrayUnion({
                     customerId: context.auth.uid,
