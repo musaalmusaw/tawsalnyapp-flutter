@@ -9,7 +9,8 @@ const admin = require('firebase-admin');
 // يجب تهيئة التطبيق قبل استخدام خدمات Firebase الأخرى
 if (!admin.apps.length) {
     admin.initializeApp({
-        credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
+        // ✅ التعديل الحاسم: نستخدم اسم المتغير البيئي الذي تم رفعه في Vercel
+        credential: admin.credential.cert(JSON.parse(process.env.SERVICE_ACCOUNT_KEY)),
         // رابط قاعدة البيانات الصحيح
         databaseURL: "https://tawsalnyapp-default-rtdb.firebaseio.com/"
     });
@@ -53,7 +54,7 @@ async function matchRouteRequestInternal(data, context) {
     const maxSearchDistance = 5000; // نطاق البحث الأقصى حول نقطة الانطلاق (5 كم)
 
     try {
-        // ✅ التعديل الأول: استخدام Realtime Database للوصول إلى 'drivers'
+        // استخدام Realtime Database للوصول إلى 'drivers'
         const driversRef = admin.database().ref('drivers');
         const driversSnapshot = await driversRef.once('value');
         const driversData = driversSnapshot.val(); // نحصل على البيانات كـ Object
@@ -110,7 +111,7 @@ async function matchRouteRequestInternal(data, context) {
         });
 
         if (bestMatch) {
-            // ✅ التعديل الثاني: استخدام Realtime Database للتحديث
+            // استخدام Realtime Database للتحديث
             const newRequest = {
                 customerId: context.auth.uid,
                 origin: { lat: originLat, lon: originLon },
@@ -146,6 +147,7 @@ module.exports = async (req, res) => {
         return res.status(405).send('Method Not Allowed');
     }
 
+    // نحصل على البيانات ونضمن وجود حقل المصادقة
     const data = req.body;
 
     if (!data.auth || !data.auth.uid) {
@@ -161,6 +163,7 @@ module.exports = async (req, res) => {
         return res.status(200).json(result);
     } catch (error) {
         console.error("Vercel Match Error:", error.message);
+        // نحدد حالة الخطأ
         const statusCode = error.message.includes('Unauthenticated') || error.message.includes('Missing UID') ? 401 : 500;
         return res.status(statusCode).json({ error: error.message });
     }
