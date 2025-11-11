@@ -7,8 +7,8 @@ import 'dart:convert';
 // **********************************************
 // ** الرابط النهائي الصحيح والمؤكد لـ Vercel **
 // **********************************************
-// تم تحديث الرابط هنا (tawsalny-driver-service-2025.vercel.app) لحل خطأ 404
-final url = 'https://tawsalny-driver-service-2025.vercel.app/api/match-route';
+// الرابط الأبسط: بدون مجلد api
+final url = 'https://tawsalny-driver-service-2025.vercel.app/match-route';
 
 class RouteRequestScreen extends StatefulWidget {
   const RouteRequestScreen({super.key});
