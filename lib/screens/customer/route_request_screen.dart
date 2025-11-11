@@ -7,8 +7,8 @@ import 'dart:convert';
 // **********************************************
 // ** الرابط النهائي الصحيح والمؤكد لـ Vercel **
 // **********************************************
-// الرابط الأبسط: بدون مجلد api
-final url = 'https://tawsalny-driver-service-2025.vercel.app/match-route';
+// الرابط الذي يجب أن يعمل مع الإعدادات القياسية
+final url = 'https://tawsalny-driver-service-2025.vercel.app/api/match-route';
 
 class RouteRequestScreen extends StatefulWidget {
   const RouteRequestScreen({super.key});
