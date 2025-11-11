@@ -1,8 +1,0 @@
-{
-  "routes": [
-    {
-      "src": "/api/match-route",
-      "dest": "/api/match-route.js"
-    }
-  ]
-}
