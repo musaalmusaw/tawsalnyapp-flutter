@@ -7,33 +7,35 @@
 const admin = require('firebase-admin');
 
 // 🚨 الخطوة 1: استخراج المتغيرات البيئية
-// نستخدم متغير وسيط لضمان قراءة سلسلة النص الطويلة بشكل صحيح.
 const serviceAccountKeyString = process.env.SERVICE_ACCOUNT_KEY;
-const databaseUrl = process.env.FIREBASE_DATABASE_URL; // متغير جديد (يجب إضافته في Vercel)
+const databaseUrl = process.env.FIREBASE_DATABASE_URL;
+
+let isFirebaseInitialized = false;
 
 // يجب تهيئة التطبيق قبل استخدام خدمات Firebase الأخرى
 if (!admin.apps.length) {
     if (!serviceAccountKeyString || !databaseUrl) {
-        // رسالة خطأ واضحة إذا كانت المتغيرات مفقودة
+        // نكتفي بالتسجيل في console ولا نرمي خطأ
         console.error("Critical Error: Missing SERVICE_ACCOUNT_KEY or FIREBASE_DATABASE_URL environment variables.");
-        // يمكننا رمي خطأ لإنهاء التهيئة
-        throw new Error('Firebase-Config-Error: Missing environment variables for service key or database URL.');
-    }
+    } else {
+        try {
+            // 🚨 الخطوة 2: استخدام JSON.parse لتحويل السلسلة النصية إلى كائن JSON
+            const serviceAccount = JSON.parse(serviceAccountKeyString);
 
-    try {
-        // 🚨 الخطوة 2: استخدام JSON.parse لتحويل السلسلة النصية إلى كائن JSON
-        const serviceAccount = JSON.parse(serviceAccountKeyString);
-
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            databaseURL: databaseUrl // استخدام المتغير البيئي الجديد
-        });
-        console.log("Firebase app initialized successfully.");
-    } catch (e) {
-        console.error("Critical Error: Failed to parse SERVICE_ACCOUNT_KEY or initialize Firebase:", e);
-        throw new Error('Firebase-Init-Error: Failed to parse service account key. Check key format in Vercel.');
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+                databaseURL: databaseUrl
+            });
+            isFirebaseInitialized = true;
+            console.log("Firebase app initialized successfully.");
+        } catch (e) {
+            console.error("Critical Error: Failed to parse SERVICE_ACCOUNT_KEY or initialize Firebase:", e);
+        }
     }
+} else {
+    isFirebaseInitialized = true;
 }
+
 
 // دالة مساعد لحساب المسافة الجغرافية (بالمتر) بين نقطتين (Haversine Formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -54,9 +56,10 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 // الدالة الداخلية لخوارزمية المطابقة
 async function matchRouteRequestInternal(data, context) {
     // التأكد من أن Firebase مُهيأ بنجاح قبل المتابعة
-    if (!admin.apps.length) {
+    if (!isFirebaseInitialized) {
         throw new Error('Internal Error: Firebase initialization failed, cannot proceed.');
     }
+    // ... بقية الكود الداخلي بدون تغيير ...
 
     if (!context.auth || !context.auth.uid) {
         throw new Error('Unauthenticated: يجب أن تكون مسجلاً للدخول لتنفيذ هذا الإجراء.');
@@ -164,9 +167,16 @@ async function matchRouteRequestInternal(data, context) {
     }
 }
 
+
 // دالة Vercel/Node.js الرئيسية التي تتعامل مع الطلب HTTP
 module.exports = async (req, res) => {
+    // التحقق من حالة التهيئة في كل طلب
+    if (!isFirebaseInitialized) {
+        return res.status(500).json({ error: 'Internal Server Error: Firebase initialization failed due to missing or invalid environment variables.' });
+    }
+
     if (req.method !== 'POST') {
+        // هذا الخطأ هو الذي ظهر في المتصفح قبل 502
         return res.status(405).send('Method Not Allowed');
     }
 
@@ -188,6 +198,7 @@ module.exports = async (req, res) => {
         console.error("Vercel Match Error:", error.message);
         // نحدد حالة الخطأ
         const statusCode = error.message.includes('Unauthenticated') || error.message.includes('Missing UID') ? 401 : 500;
+        // نضمن أننا نرسل استجابة JSON صالحة
         return res.status(statusCode).json({ error: error.message });
     }
 };
